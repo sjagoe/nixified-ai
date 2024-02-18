@@ -11,6 +11,7 @@ let
     (builtins.match ".*__version__ = \"([^\"]+)\".*")
     builtins.head
   ];
+  interactiveImportPatch = ./0001-Non-interactive-model-import.patch;
 in
 
 python3Packages.buildPythonPackage {
@@ -113,6 +114,7 @@ python3Packages.buildPythonPackage {
       '
     ''
   ];
+
   patchPhase = ''
     runHook prePatch
 
@@ -138,6 +140,8 @@ import subprocess
     substituteInPlace ./pyproject.toml \
       --replace 'pip~=22.3' 'pip' \
       --replace 'setuptools~=65.5' 'setuptools'
+
+    patch -p1 < ${interactiveImportPatch}
   '';
   meta = {
     description = "Fancy Web UI for Stable Diffusion";

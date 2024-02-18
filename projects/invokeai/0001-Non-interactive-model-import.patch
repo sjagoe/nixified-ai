@@ -1,0 +1,54 @@
+From 2bb8d3f1b881a895721c86dbaf389e1d8da9d63b Mon Sep 17 00:00:00 2001
+From: Simon Jagoe <simon@simonjagoe.com>
+Date: Sun, 18 Feb 2024 12:25:26 +0200
+Subject: [PATCH] Non-interactive model import
+
+---
+ invokeai/backend/install/model_install_backend.py |  8 +++++++-
+ invokeai/frontend/install/model_install.py        | 11 ++++++-----
+ 2 files changed, 13 insertions(+), 6 deletions(-)
+
+diff --git a/invokeai/backend/install/model_install_backend.py b/invokeai/backend/install/model_install_backend.py
+index 1481300c7..518922628 100644
+--- a/invokeai/backend/install/model_install_backend.py
++++ b/invokeai/backend/install/model_install_backend.py
+@@ -255,7 +255,13 @@ class ModelInstall(object):
+         # recursive scan
+         elif path.is_dir():
+             for child in path.iterdir():
+-                self.heuristic_import(child, models_installed=models_installed)
++                try:
++                    self.heuristic_import(child, models_installed=models_installed)
++                except ValueError as e:
++                    msg = str(e)
++                    if 'A model named' in msg and 'is already installed' in msg:
++                        logger.warning(msg)
++                        continue
+ 
+         # huggingface repo
+         elif len(str(model_path_id_or_url).split("/")) == 2:
+diff --git a/invokeai/frontend/install/model_install.py b/invokeai/frontend/install/model_install.py
+index 0ea2570b2..258d9e57a 100644
+--- a/invokeai/frontend/install/model_install.py
++++ b/invokeai/frontend/install/model_install.py
+@@ -624,11 +624,12 @@ class StderrToMessage:
+ 
+ # --------------------------------------------------------
+ def ask_user_for_prediction_type(model_path: Path, tui_conn: Connection = None) -> SchedulerPredictionType:
+-    if tui_conn:
+-        logger.debug("Waiting for user response...")
+-        return _ask_user_for_pt_tui(model_path, tui_conn)
+-    else:
+-        return _ask_user_for_pt_cmdline(model_path)
++    return None
++    # if tui_conn:
++    #     logger.debug("Waiting for user response...")
++    #     return _ask_user_for_pt_tui(model_path, tui_conn)
++    # else:
++    #     return _ask_user_for_pt_cmdline(model_path)
+ 
+ 
+ def _ask_user_for_pt_cmdline(model_path: Path) -> Optional[SchedulerPredictionType]:
+-- 
+2.42.0
+
